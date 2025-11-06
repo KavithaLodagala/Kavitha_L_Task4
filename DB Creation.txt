@@ -96,3 +96,115 @@ INSERT INTO order_details VALUES
 (10, 109, 4, 1, 89.99),
 (11, 110, 6, 1, 129.99),
 (12, 110, 8, 1, 20.00);
+
+Basic SELECT & WHERE 
+
+1.List all customers from the USA.
+ select * from customers where country='USA';
+
+2.Find all products in the “Electronics” category costing more than $50.
+select * from products where category = 'Electronics' and price>50;
+
+3.Show orders placed after June 2023.
+select * from orders where order_date>'2023-06-23';
+
+
+ORDER BY & LIMIT 
+
+1.List the top 5 most expensive products.
+select * from products
+order by price desc
+LIMIT 5;
+
+
+2.Display customers ordered by their join date (newest first).
+
+SELECT * 
+FROM customers 
+ORDER BY join_date DESC;
+
+GROUP BY & Aggregate Functions
+
+1.Find the total number of customers in each country.
+select country, count(*) as 'Total number of customers'
+from customers
+group by country;
+
+2.Calculate the average order total per customer.
+select customer_id, AVG(total_amount)
+from orders 
+group by customer_id;
+
+3.Find the total revenue per product.
+ select product_id, SUM(subtotal)
+ from order_details
+ group by product_id;
+
+JOINS (INNER, LEFT, RIGHT)
+
+1.Show all orders with customer name and total amount.
+select o.order_id, c.customer_id, c.first_name, c.last_name, o.total_amount
+from orders o
+join customers c on o.customer_id = c.customer_id;
+
+2.List each customer and their total order value.
+select c.customer_id, count(*) as 'total_number_of_orders'
+from customers c
+join orders o on c.customer_id=o.customer_id
+group by o.customer_id;
+
+3.Get a list of all products and the number of times they’ve been ordered.
+select p.product_id, p.product_name, count(*) as 'Total_number_of_orders'
+from products p
+join order_details o on o.product_id = p.product_id
+group by o.product_id;
+
+Subqueries 
+
+1.Find customers who have spent more than the average total order amount.
+select * from (
+select customer_id, sum(total_amount) as amount
+from orders
+group by customer_id) as temp
+where amount > (select AVG(total_amount) from orders);
+
+
+
+2.Find products that cost more than the average price in their category.
+
+select product_id, product_name, p.category, avg_price, price
+from products p
+left join (select category, AVG(price) as avg_price 
+from products group by category) as temp on temp.category=p.category
+where p.price>temp.avg_price;
+
+ Views 
+
+1.Create a view showing customer name, product purchased, quantity, and order date.
+
+CREATE VIEW customer_orders AS
+select o.customer_id, c.first_name, c.last_name, p.product_name, od.quantity, o.order_date
+from orders o
+join order_details od on od.order_id = o.order_id
+join products p on p.product_id = od.product_id
+join customers c on c.customer_id = o.customer_id;
+select * from customer_orders;
+
+2.Create a view summarizing total revenue by category.
+
+CREATE VIEW total_revenue_by_category AS
+select p.category, sum(od.subtotal) as total_revenue
+from products p
+join order_details od on od.product_id = p.product_id
+group by p.category;
+select * from total_revenue_by_category;
+
+Indexing & Optimization
+
+1.Create an index on the order_date column of the orders table.
+CREATE INDEX idx_order_date
+ON orders (order_date);
+
+2.Create a composite index on customer_id and order_id in the order_details table.
+CREATE INDEX idx_customer_order
+ON order_details (order_id, product_id);
